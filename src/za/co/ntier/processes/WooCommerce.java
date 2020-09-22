@@ -1,39 +1,48 @@
 package za.co.ntier.processes;
 
-import org.compiere.model.MOrder;
+import org.compiere.model.PO;
+import org.compiere.model.Query;
 import org.compiere.process.SvrProcess;
+import org.compiere.util.Env;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.icoderman.woocommerce.ApiVersionType;
 import com.icoderman.woocommerce.EndpointBaseType;
 import com.icoderman.woocommerce.Woocommerce;
 import com.icoderman.woocommerce.WooCommerceAPI;
 import com.icoderman.woocommerce.oauth.OAuthConfig;
 
+import za.co.ntier.model.X_zz_woocommerce;
 import za.co.ntier.woocommerce.WcOrder;
+
+/**
+ *
+ * Start a thread to collect unsynchronised orders from WooCommerce website
+ *
+ * @author yogan naidoo
+ */
 
 public class WooCommerce extends SvrProcess {
 
-	
 	public class MyRunnable implements Runnable {
 
 		@Override
 		public void run() {
-			System.out.println("My runnable is running");
-			
+
+			// Get WooCommerce defaults
+			final PO wcDefaults;
+			String whereClause = " isactive = 'Y' AND AD_Client_ID = ?";
+			wcDefaults = new Query(getCtx(), X_zz_woocommerce.Table_Name, whereClause, null)
+					.setParameters(new Object[] { Env.getAD_Client_ID(getCtx()) }).firstOnly();
+			if (wcDefaults == null)
+				throw new IllegalStateException("/nWooCommerce Defaults need to be set on iDempiere /n");
+
 			// Setup client
-			OAuthConfig config = new OAuthConfig("https://dazzle.co.za/wctest",
-					"ck_925b78b0d4a38082e6888c3fe52454d8b09348d2", "cs_6196075ca314adf2f31239fb2cd20bceaeb45120");
+			OAuthConfig config = new OAuthConfig((String) wcDefaults.get_Value("url"),
+					(String) wcDefaults.get_Value("consumerkey"), (String) wcDefaults.get_Value("consumersecret"));
 			Woocommerce wooCommerce = new WooCommerceAPI(config, ApiVersionType.V3);
 
 			// Get all with request parameters
@@ -43,13 +52,13 @@ public class WooCommerce extends SvrProcess {
 			params.put("meta_key", "syncedToIdempiere");
 			params.put("meta_value", "yes");
 			params.put("status", "completed");
-			
+
 			List<?> wcOrders = wooCommerce.getAll(EndpointBaseType.ORDERS.getValue(), params);
 			// Iterate through each order
 			for (int i = 0; i < wcOrders.size(); i++) {
 				Map<?, ?> order = (Map<?, ?>) wcOrders.get(i);
 				System.out.println("Order- " + order.get("id") + ": " + order);
-				WcOrder wcOrder =  new WcOrder(getCtx(), get_TrxName());
+				WcOrder wcOrder = new WcOrder(getCtx(), get_TrxName(), wcDefaults);
 				wcOrder.createOrder(order);
 
 				// Iterate through each order Line
@@ -63,37 +72,33 @@ public class WooCommerce extends SvrProcess {
 				wcOrder.createShippingCharge(order);
 				wcOrder.createPosPayment(order);
 				wcOrder.completeOrder();
-				
-				/*// Update syncedToIdempiere to 'yes'
-				Map<String, Object> body = new HashMap<>();
-				List<Map<String, String>> listOfMetaData = new ArrayList();
-				Map<String, String> metaData = new HashMap<>();
-				metaData.put("key", "syncedToIdempiere");
-				metaData.put("value", "yes");
-				listOfMetaData.add(metaData);
 
-				body.put("meta_data", listOfMetaData);
-				Map<?, ?> response = wooCommerce.update(EndpointBaseType.ORDERS.getValue(), id, body);
-				System.out.println(response.toString()); */
+				/*
+				 * // Update syncedToIdempiere to 'yes' Map<String, Object> body = new
+				 * HashMap<>(); List<Map<String, String>> listOfMetaData = new ArrayList();
+				 * Map<String, String> metaData = new HashMap<>(); metaData.put("key",
+				 * "syncedToIdempiere"); metaData.put("value", "yes");
+				 * listOfMetaData.add(metaData);
+				 * 
+				 * body.put("meta_data", listOfMetaData); Map<?, ?> response =
+				 * wooCommerce.update(EndpointBaseType.ORDERS.getValue(), id, body);
+				 * System.out.println(response.toString());
+				 */
 			}
-			System.out.println("My runnable is finished");
 		}
-		
+
 	}
-	
+
 	@Override
 	protected void prepare() {
-		log.warning("--------------In the prepare method");
 	}
 
 	@Override
 	protected String doIt() throws Exception {
-		log.warning("--------------In the doIt method");
-		Thread thread = new Thread(new MyRunnable() );
+		Thread thread = new Thread(new MyRunnable());
 		thread.start();
-		log.warning("--------------Exiting doIt method");
 
-		return "Success";
+		return "Synchronisation to WooCommerce initiated";
 	}
 
 }

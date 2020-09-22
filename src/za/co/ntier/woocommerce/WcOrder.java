@@ -27,6 +27,14 @@ import za.co.ntier.model.X_zz_woocommerce;
 import org.compiere.process.DocAction;
 import java.util.LinkedHashMap;
 
+/**
+*
+* Create Order and lines on iDempiere as received
+* from WooCommerce
+*
+* @author yogan naidoo
+*/
+
 public final class WcOrder {
 	private final Properties ctx;
 	private final String trxName;
@@ -42,16 +50,11 @@ public final class WcOrder {
 	private static CLogger log = CLogger.getCLogger(WcOrder.class);
 	private PO wcDefaults;
 
-	public WcOrder(Properties ctx, String trxName) {
+	public WcOrder(Properties ctx, String trxName, PO wcDefaults) {
 		this.ctx = ctx;
 		this.trxName = trxName;
+		this.wcDefaults =  wcDefaults;
 		order = new MOrder(ctx, 0, trxName);
-		String whereClause = " isactive = 'Y' AND AD_Client_ID = ?";
-		wcDefaults = new Query(ctx, X_zz_woocommerce.Table_Name, whereClause, null)
-				.setParameters(new Object[] { Env.getAD_Client_ID(ctx) })
-				.firstOnly();
-		if (wcDefaults == null)
-			throw new IllegalStateException("/nWooCommerce Defaults need to be set on Idempiere /n");
 		this.inclusivePrice_ID = (int) wcDefaults.get_Value("incl_pricelist_id");
 		this.exclusivePrice_ID = (int) wcDefaults.get_Value("excl_pricelist_id");
 	}
