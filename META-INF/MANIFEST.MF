@@ -1,0 +1,21 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Woocommerce-ntier
+Bundle-SymbolicName: za.co.ntier.woocommerce
+Bundle-Version: 1.0.0.qualifier
+Automatic-Module-Name: za.co.ntier.woocommerce
+Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-ActivationPolicy: lazy
+Require-Bundle: org.adempiere.base;bundle-version="7.1.0",
+ org.adempiere.plugin.utils;bundle-version="7.1.0"
+Service-Component: ProcessFactory.xml
+Import-Package: com.fasterxml.jackson.core;version="2.10.0",
+ com.fasterxml.jackson.databind;version="2.10.0",
+ org.apache.commons.codec.binary;version="1.13.0",
+ org.apache.http;version="4.4.12",
+ org.apache.http.client.methods;version="4.5.10",
+ org.apache.http.client.utils;version="4.5.10",
+ org.apache.http.entity;version="4.4.12",
+ org.apache.http.impl.client;version="4.5.10",
+ org.apache.http.message;version="4.4.12"
+Bundle-Vendor: nTier Software Services
