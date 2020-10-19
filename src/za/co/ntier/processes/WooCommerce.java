@@ -98,7 +98,7 @@ public class WooCommerce extends SvrProcess {
 		Thread thread = new Thread(new MyRunnable());
 		thread.start();
 
-		return "Synchronisation to WooCommerce initiated";
+		return "Synchronisation from WooCommerce initiated";
 	}
 
 }

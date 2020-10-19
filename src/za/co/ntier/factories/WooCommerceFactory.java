@@ -2,7 +2,6 @@ package za.co.ntier.factories;
 
 import org.adempiere.base.IProcessFactory;
 import org.compiere.process.ProcessCall;
-
 import za.co.ntier.processes.WooCommerce;
 
 public class WooCommerceFactory implements IProcessFactory{
