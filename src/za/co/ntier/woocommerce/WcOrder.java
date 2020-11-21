@@ -15,32 +15,22 @@ import org.compiere.model.MOrder;
 import org.compiere.model.MOrderLine;
 import org.compiere.model.MUser;
 import org.compiere.model.PO;
-import org.compiere.model.Query;
 import org.compiere.model.X_C_POSPayment;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
-import org.compiere.util.Env;
-
-import za.co.ntier.model.I_zz_woocommerce;
-import za.co.ntier.model.X_zz_woocommerce;
-
 import org.compiere.process.DocAction;
-import java.util.LinkedHashMap;
 
 /**
-*
-* Create Order and lines on iDempiere as received
-* from WooCommerce
-*
-* @author yogan naidoo
-*/
+ *
+ * Create Order and lines on iDempiere as received from WooCommerce
+ *
+ * @author yogan naidoo
+ */
 
 public final class WcOrder {
 	private final Properties ctx;
 	private final String trxName;
 	private final int POS_ORDER = 135;
-	private int inclusivePrice_ID = 0;
-	private int exclusivePrice_ID = 0;
 
 	// private final int priceList_ID = 101;
 	final String PAYMENT_RULE = "M";
@@ -53,10 +43,8 @@ public final class WcOrder {
 	public WcOrder(Properties ctx, String trxName, PO wcDefaults) {
 		this.ctx = ctx;
 		this.trxName = trxName;
-		this.wcDefaults =  wcDefaults;
+		this.wcDefaults = wcDefaults;
 		order = new MOrder(ctx, 0, trxName);
-		this.inclusivePrice_ID = (int) wcDefaults.get_Value("incl_pricelist_id");
-		this.exclusivePrice_ID = (int) wcDefaults.get_Value("excl_pricelist_id");
 	}
 
 	public void createOrder(Map<?, ?> orderWc) {
@@ -70,12 +58,13 @@ public final class WcOrder {
 		order.setBill_Location_ID(BPLocationId);
 		// order.setBill_User_ID(); order.setSalesRep_ID(101);
 		isTaxInclusive = (orderWc.get("prices_include_tax").toString().equals("true")) ? true : false;
-		order.setM_PriceList_ID((isTaxInclusive) ? inclusivePrice_ID : exclusivePrice_ID);
+		order.setM_PriceList_ID(getPriceList(orderWc));
 		order.setIsSOTrx(true);
 		order.setM_Warehouse_ID((int) wcDefaults.get_Value("m_warehouse_id"));
 		order.setC_DocTypeTarget_ID(POS_ORDER);
 		order.setPaymentRule(PAYMENT_RULE);
-		// order.setDeliveryRule("A");
+		order.setDeliveryRule("F");
+		order.setInvoiceRule("D");
 
 		if (!order.save()) {
 			throw new IllegalStateException("Could not create order");
@@ -85,6 +74,26 @@ public final class WcOrder {
 	public String getWcCustomerEmail(Map<?, ?> orderWc) {
 		Map<?, ?> billing = (Map<?, ?>) orderWc.get("billing");
 		return (String) billing.get("email");
+	}
+
+	private int getPriceList(Map<?, ?> orderWc) {
+		String wcCurrency = (String) orderWc.get("currency");
+		String localCurrency = DB.getSQLValueString(trxName,
+				"select iso_code from C_Currency " + "where C_Currency_ID = " + "(select C_Currency_ID "
+						+ "from M_PriceList " + "where M_PriceList_id = ?) ",
+				(int) wcDefaults.get_Value("local_incl_pricelist_id"));
+
+		Boolean local = (wcCurrency.equals(localCurrency)) ? true : false;
+
+		int priceList;
+		if (local) {
+			priceList = (isTaxInclusive) ? (int) wcDefaults.get_Value("local_incl_pricelist_id")
+					: (int) wcDefaults.get_Value("local_excl_pricelist_id");
+		} else {
+			priceList = (isTaxInclusive) ? (int) wcDefaults.get_Value("intl_incl_pricelist_id")
+					: (int) wcDefaults.get_Value("intl_excl_pricelist_id");
+		}
+		return (priceList);
 	}
 
 	public int getBPId(String email, Map<?, ?> orderWc) {
@@ -134,7 +143,7 @@ public final class WcOrder {
 		String countryCode = (String) billing.get("country");
 		int c_country_id;
 		if (isBlankOrNull(countryCode))
-			c_country_id =  (int) wcDefaults.get_Value("c_country_id");
+			c_country_id = (int) wcDefaults.get_Value("c_country_id");
 		else
 			c_country_id = DB.getSQLValue(trxName, "select c_country_id " + "from c_country " + "where countrycode = ?",
 					countryCode);
@@ -247,7 +256,7 @@ public final class WcOrder {
 		List<?> taxLines = (List<?>) orderWc.get("tax_lines");
 		Map<?, ?> taxLine = (Map<?, ?>) taxLines.get(0);
 		String taxRate = (String) taxLine.get("label");
-		return (taxRate.equals("Standard") ? (int) wcDefaults.get_Value("standard_tax_id") 
+		return (taxRate.equals("Standard") ? (int) wcDefaults.get_Value("standard_tax_id")
 				: (int) wcDefaults.get_Value("zero_tax_id"));
 	}
 

@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
+	<classpathentry exported="true" kind="lib" path="com.fasterxml.jackson.core.jackson-core_2.10.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="com.fasterxml.jackson.core.jackson-databind_2.10.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="org.apache.commons.codec_1.13.0.v20200108-0001.jar"/>
+	<classpathentry exported="true" kind="lib" path="org.apache.httpcomponents.httpclient_4.5.10.v20200114-1512.jar"/>
+	<classpathentry exported="true" kind="lib" path="org.apache.httpcomponents.httpcore_4.4.12.v20200108-1212.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-11">
 		<attributes>
 			<attribute name="module" value="true"/>
