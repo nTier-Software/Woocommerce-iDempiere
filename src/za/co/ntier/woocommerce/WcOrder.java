@@ -16,6 +16,7 @@ import org.compiere.model.MOrderLine;
 import org.compiere.model.MUser;
 import org.compiere.model.PO;
 import org.compiere.model.X_C_POSPayment;
+import org.compiere.model.X_C_Payment;
 import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.process.DocAction;
@@ -30,7 +31,9 @@ import org.compiere.process.DocAction;
 public final class WcOrder {
 	private final Properties ctx;
 	private final String trxName;
+	private final int POSTENDERTYPE_ID = 1000000;
 	private final int POS_ORDER = 135;
+	
 
 	// private final int priceList_ID = 101;
 	final String PAYMENT_RULE = "M";
@@ -292,8 +295,8 @@ public final class WcOrder {
 		posPayment.setC_Order_ID(order.getC_Order_ID());
 		posPayment.setAD_Org_ID(order.getAD_Org_ID());
 		posPayment.setPayAmt(new BigDecimal(orderWc.get("total").toString()));
-		posPayment.setC_POSTenderType_ID(1000000); // credit card
-		posPayment.setTenderType("C"); // credit card
+		posPayment.setC_POSTenderType_ID(POSTENDERTYPE_ID); // credit card
+		posPayment.setTenderType(X_C_Payment.TENDERTYPE_CreditCard); // credit card
 		if (!posPayment.save())
 			throw new IllegalStateException("Could not create POSPayment");
 	}

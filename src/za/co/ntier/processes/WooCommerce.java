@@ -5,6 +5,7 @@ import org.compiere.model.Query;
 import org.compiere.process.SvrProcess;
 import org.compiere.util.Env;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,13 +51,14 @@ public class WooCommerce extends SvrProcess {
 			params.put("per_page", "100");
 			params.put("offset", "0");
 			params.put("meta_key", "syncedToIdempiere");
-			params.put("meta_value", "yes");
+			params.put("meta_value", "no");
 			params.put("status", "completed");
 
 			List<?> wcOrders = wooCommerce.getAll(EndpointBaseType.ORDERS.getValue(), params);
 			// Iterate through each order
 			for (int i = 0; i < wcOrders.size(); i++) {
 				Map<?, ?> order = (Map<?, ?>) wcOrders.get(i);
+				int id = (int) order.get("id");
 				System.out.println("Order- " + order.get("id") + ": " + order);
 				WcOrder wcOrder = new WcOrder(getCtx(), get_TrxName(), wcDefaults);
 				wcOrder.createOrder(order);
@@ -73,17 +75,18 @@ public class WooCommerce extends SvrProcess {
 				wcOrder.createPosPayment(order);
 				wcOrder.completeOrder();
 
-				/*
-				 * // Update syncedToIdempiere to 'yes' Map<String, Object> body = new
-				 * HashMap<>(); List<Map<String, String>> listOfMetaData = new ArrayList();
-				 * Map<String, String> metaData = new HashMap<>(); metaData.put("key",
-				 * "syncedToIdempiere"); metaData.put("value", "yes");
-				 * listOfMetaData.add(metaData);
-				 * 
-				 * body.put("meta_data", listOfMetaData); Map<?, ?> response =
-				 * wooCommerce.update(EndpointBaseType.ORDERS.getValue(), id, body);
-				 * System.out.println(response.toString());
-				 */
+				// Update syncedToIdempiere to 'yes'
+				Map<String, Object> body = new HashMap<>();
+				List<Map<String, String>> listOfMetaData = new ArrayList();
+				Map<String, String> metaData = new HashMap<>();
+				metaData.put("key", "syncedToIdempiere");
+				metaData.put("value", "yes");
+				listOfMetaData.add(metaData);
+
+				body.put("meta_data", listOfMetaData);
+				Map<?, ?> response = wooCommerce.update(EndpointBaseType.ORDERS.getValue(), id, body);
+				System.out.println(response.toString());
+
 			}
 		}
 
