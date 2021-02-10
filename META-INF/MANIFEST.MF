@@ -1,4 +1,5 @@
 Manifest-Version: 1.0
+Automatic-Module-Name: za.co.ntier.woocommerce
 Bundle-ManifestVersion: 2
 Bundle-Name: Woocommerce-ntier
 Bundle-SymbolicName: za.co.ntier.woocommerce;singleton:=true
@@ -22,3 +23,4 @@ Bundle-ClassPath: .,
  com.fasterxml.jackson.core.jackson-annotations_2.10.0.jar
 Bundle-Activator: org.adempiere.plugin.utils.AdempiereActivator
 Import-Package: org.osgi.framework;version="1.9.0"
+Bundle-ActivationPolicy: lazy
